@@ -20,30 +20,30 @@ BASE_DIR
 ### Install required packages
 
 ```
-:~# sudo apt install python3 python3-flask python3-flask-sqlalchemy python3-flask-login ffmpeg cmake git
+sudo apt install python3 python3-flask python3-flask-sqlalchemy python3-flask-login ffmpeg cmake git
 ```
 ### Clone the whisper.cpp project and compile it.
 ### whisper.cpp AND A2E-Transcriber MUST be cloned within the same directory
 
 ```
-:~ # git clone https://github.com/ggerganov/whisper.cpp
-:~ # cd whisper.cpp
-:~/whisper.cpp # make
+git clone https://github.com/ggerganov/whisper.cpp
+cd whisper.cpp
+make
 ```
 ### Download whisper models
 
 ```
-:~/whisper.cpp # cd ~/whisper.cpp/models
-:~/whisper.cpp/models # ./download-ggml-model.sh tiny
-:~/whisper.cpp/models # ./download-ggml-model.sh small
-:~/whisper.cpp/models # ./download-ggml-model.sh base
-:~/whisper.cpp/models # ./download-ggml-model.sh medium
+cd ~/whisper.cpp/models
+./download-ggml-model.sh tiny
+./download-ggml-model.sh small
+./download-ggml-model.sh base
+./download-ggml-model.sh medium
 ```
 ### Download the translator repository
 
 ```
-:~/whisper.cpp/models # cd ~/
-:~ # git clone https://github.com/ILL-DIE-TRYING/A2E-Transcriber
+cd ../../
+git clone https://github.com/ILL-DIE-TRYING/A2E-Transcriber
 ```
 
 ## Prepare the transcriber for first start and user generation
@@ -51,8 +51,8 @@ BASE_DIR
 ### Enable user registration in config.py, register your user, and the IMMEDIATLY disable user registration (IMPORTANT!)
 
 ```
-:~ # cd ~/A2E-Transcriber
-:~/A2E-Transcriber # nano config.py
+cd ~/A2E-Transcriber
+nano config.py
 ```
 
 Change the following line to "True" and save the file
@@ -69,7 +69,7 @@ Set to False (SECURE DEFAULT) immediately after the first user is created.
 
 ### Manually fire up the transcriber to test and save the initial user.
 
-`:~/A2E-Transcriber # python3 app.py`
+`python3 app.py`
 
 The transcriber should start up and tell you the url to view the web interface.
 At this point you should be able to browse to the transciber URL with your web browser.
@@ -79,8 +79,7 @@ Choose register, fill in the form, and when finished, save and try logging in.
 ### ONCE YOU HAVE LOGGED IN YOU MUST EDIT config.py and set REGISTRATION_ENABLED to "False".
 
 ```
-:~ # cd ~/transcriber
-:~/transcriber # nano config.py
+nano config.py
 ```
 
 ### --- Authentication Configuration ---
@@ -99,7 +98,7 @@ create the service file:
 
 `sudo nano /etc/systemd/system/transcriber.service`
 
-# Paste this to the service file (BE SURE TO CHANGE THE PATH TO THE FILES AND THE USER!!):
+### Paste this to the service file (BE SURE TO CHANGE THE PATH TO THE FILES AND THE USER!!):
 
 ```
 [Unit]
@@ -116,11 +115,11 @@ User=pi
 WantedBy=multi-user.target
 ```
 
-# Enable the service, start it, and check if it started okay:
+### Enable the service, start it, and check if it started okay:
 
 ```
-:~# sudo systemctl enable transcriber
-:~# sudo systemctl start transcriber
-:~# sudo systemctl status transcriber
+sudo systemctl enable transcriber
+sudo systemctl start transcriber
+sudo systemctl status transcriber
 ```
 
