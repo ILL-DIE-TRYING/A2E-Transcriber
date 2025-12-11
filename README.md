@@ -11,7 +11,7 @@ Only tested on Linux (Mint 22)
 ### REQUIRED DIRECTORY STRUCTURE
 
 ```
-USER_HOME_DIR
+BASE_DIR
           |
 		  -- translator
 		  |
@@ -23,7 +23,7 @@ USER_HOME_DIR
 :~# sudo apt install python3 python3-flask python3-flask-sqlalchemy python3-flask-login ffmpeg cmake git
 ```
 ### Clone the whisper.cpp project and compile it.
-THIS MUST BE CLONED IN THE HOME DIRECTORY OF THE USER THAT RUNS THE TRANSCRIBER
+### whisper.cpp AND A2E-Transcriber MUST be cloned within the same directory
 
 ```
 :~ # git clone https://github.com/ggerganov/whisper.cpp
