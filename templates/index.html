@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>A2E Transcriber</title> 
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-width, initial-scale=1.0">
+    <style>
+/* --- 0. PREFLIGHT (Tailwind's Reset - Minimal Version) --- */
+*, ::before, ::after {
+    box-sizing: border-box;
+    border-width: 0;
+    border-style: solid;
+    border-color: #e5e7eb; /* gray-200 */
+}
+::before, ::after { --tw-content: ''; }
+html { line-height: 1.5; -webkit-text-size-adjust: 100%; font-family: ui-sans-serif, system-ui, sans-serif; }
+body { margin: 0; line-height: inherit; }
+h1, h2, h3, h4, h5, h6 { font-size: inherit; font-weight: inherit; }
+a { color: inherit; text-decoration: inherit; }
+button { cursor: pointer; }
+img { display: block; max-width: 100%; height: auto; }
+input[type="checkbox"] { appearance: none; padding: 0; display: inline-block; vertical-align: middle; }
+
+/* --- 1. EXISTING CUSTOM STYLES & VARIABLES --- */
+body { 
+    font-family: 'Inter', sans-serif; 
+    background-color: #f7fafc; /* gray-50 */
+    color: black;
+}
+
+/* Status colors (Variables) */
+:root {
+    --status-pending: #f97316; /* orange-600 */
+    --status-processing: #2563eb; /* blue-600 */
+    --status-done: #10b981; /* emerald-500 */
+    --status-error: #ef4444; /* red-500 */
+}
+.status-pending { color: var(--status-pending); } 
+.status-processing { color: var(--status-processing); } 
+.status-done { color: var(--status-done); } 
+.status-error { color: var(--status-error); } 
+
+/* Custom dropdown styles for hover/click interaction */
+.dropdown {
+    position: relative; 
+    display: inline-block; 
+}
+
+.dropdown-menu {
+    position: absolute;
+    right: 0;
+    z-index: 10;
+    min-width: 12rem; /* w-48 equivalent */
+    /* This handles the initial hidden state */
+    transform: translateY(-0.5rem); 
+    pointer-events: none; 
+    opacity: 0;
+    transition: opacity 150ms ease-in-out, transform 150ms ease-in-out;
+}
+
+.dropdown.open .dropdown-menu {
+    transform: translateY(0);
+    pointer-events: auto; 
+    opacity: 1;
+}
+
+/* Pre-wrap style (from transcript.html) */
+.whitespace-pre-wrap {
+    white-space: pre-wrap;
+}
+
+/* --- 2. TAILWIND UTILITY CLASSES (Reverse-Engineered) --- */
+
+/* ADD THIS SECTION TO YOUR EXISTING <style> BLOCK */
+/* --- 2.1. HOVER UTILITY CLASSES (Missing Definitions) --- */
+
+/* Fix for the class you asked about: hover:text-gray-700 */
+.hover\:text-gray-700:hover { 
+    color: #374151; /* Standard Tailwind gray-700 color */
+}
+
+/* Fix for dropdown menu items (e.g., in the 'Sent' section) */
+.hover\:bg-gray-50:hover { 
+    background-color: #f9fafb; /* Standard Tailwind gray-50 color */
+}
+
+/* Fix for the 'Re-Process' button (Red hover background) */
+.hover\:bg-red-100:hover { 
+    background-color: #fee2e2; /* Standard Tailwind red-100 color */
+}
+
+/* Fix for the 'Move to Bin' button (Red hover text) */
+.hover\:text-red-600:hover {
+    color: #dc2626; /* Standard Tailwind red-600 color */
+}
+
+/* Fix for text color change on hover, if applicable */
+.hover\:text-gray-900:hover { 
+    color: #111827; /* Standard Tailwind gray-900 color */
+}
+
+/* Layout */
+.container { width: 100%; margin-right: auto; margin-left: auto; padding-left: 1rem; padding-right: 1rem; }
+@media (min-width: 640px) { .container { max-width: 640px; } }
+@media (min-width: 768px) { .container { max-width: 768px; } }
+@media (min-width: 1024px) { .container { max-width: 1024px; } }
+@media (min-width: 1280px) { .container { max-width: 1280px; } }
+.mx-auto { margin-left: auto; margin-right: auto; }
+.max-w-7xl { max-width: 80rem; }
+.max-w-4xl { max-width: 56rem; }
+.max-w-2xl { max-width: 42rem; }
+.w-full { width: 100%; }
+.h-screen { height: 100vh; }
+.min-h-screen { min-height: 100vh; }
+.block { display: block; }
+.hidden { display: none; }
+.relative { position: relative; }
+.absolute { position: absolute; }
+.fixed { position: fixed; }
+.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+.z-10 { z-index: 10; }
+.overflow-y-auto { overflow-y: auto; }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-grow { flex-grow: 1; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.space-x-4 > :not([hidden]) ~ :not([hidden]) { margin-left: 1rem; }
+.space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 1rem; }
+.space-y-2 > :not([hidden]) ~ :not([hidden]) { margin-top: 0.5rem; }
+
+/* Spacing */
+.p-2 { padding: 0.5rem; }
+.p-4 { padding: 1rem; }
+.p-6 { padding: 1.5rem; }
+.px-4 { padding-left: 1rem; padding-right: 1rem; }
+.py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.py-4 { padding-top: 1rem; padding-bottom: 1rem; }
+.py-6 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+.my-4 { margin-top: 1rem; margin-bottom: 1rem; }
+.mt-4 { margin-top: 1rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.gap-4 { gap: 1rem; }
+
+/* Colors & Backgrounds */
+.bg-white { background-color: #fff; }
+.bg-gray-50 { background-color: #f9fafb; }
+.bg-red-500 { background-color: #ef4444; }
+.bg-blue-600 { background-color: #2563eb; }
+.bg-gray-100 { background-color: #f3f4f6; }
+.text-white { color: #fff; }
+.text-gray-900 { color: #111827; }
+.text-gray-700 { color: #374151; }
+.text-gray-600 { color: #4b5563; }
+.text-gray-500 { color: #6b7280; }
+.text-red-600 { color: #dc2626; }
+.text-blue-600 { color: #2563eb; }
+.text-emerald-500 { color: #10b981; }
+
+/* Borders & Shadows */
+.rounded { border-radius: 0.25rem; }
+.rounded-lg { border-radius: 0.5rem; }
+.rounded-full { border-radius: 9999px; }
+.shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+.border { border-width: 1px; }
+.border-b { border-bottom-width: 1px; }
+.border-gray-200 { border-color: #e5e7eb; }
+.ring-1 { box-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color); }
+.ring-black { --tw-ring-color: #000; }
+.ring-opacity-5 { --tw-ring-opacity: 0.05; }
+.focus\:ring { --tw-ring-color: #3b82f6; box-shadow: var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color); }
+.focus\:border-blue-500 { border-color: #3b82f6; }
+
+/* Typography */
+.text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+.text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+.text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+.text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+.text-xs { font-size: 0.75rem; line-height: 1rem; }
+.font-bold { font-weight: 700; }
+.font-semibold { font-weight: 600; }
+.text-center { text-align: center; }
+.leading-tight { line-height: 1.25; }
+.leading-relaxed { line-height: 1.625; }
+.break-words { word-break: break-all; }
+
+/* Table styles (mimicking defaults) */
+.table-auto { table-layout: auto; }
+.min-w-full { min-width: 100%; }
+
+/* Forms */
+.appearance-none { appearance: none; }
+.focus\:outline-none:focus { outline: 2px solid transparent; outline-offset: 2px; }
+
+/* Hover States (Buttons) */
+.hover\:bg-indigo-700:hover { background-color: #7279A9; }
+.hover\:bg-gray-50:hover { background-color: #f9fafb; }
+.hover\:bg-red-100:hover { background-color: #fee2e2; }
+.transition { transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-backdrop-filter, -webkit-filter; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+.duration-150 { transition-duration: 150ms; }
+.ease-in-out { transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Custom Elements (For index.html's table content) */
+.col-span-1 { grid-column: span 1 / span 1; }
+.grid { display: grid; }
+
+@media (min-width: 768px) {
+    .md\:p-8 { padding: 2rem; }
+    .md\:max-w-4xl { max-width: 56rem; }
+    .md\:grid-cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .md\:col-span-2 { grid-column: span 2 / span 2; }
+}
+
+@media (min-width: 1024px) {
+    .lg\:max-w-7xl { max-width: 80rem; }
+    .lg\:max-w-4xl { max-width: 56rem; }
+}
+/* --- Modal Fix: Add these rules to your existing <style> block --- */
+
+/* Basic Reset for Tailwind compatibility */
+*, ::before, ::after {
+    box-sizing: border-box;
+    border-width: 0;
+    border-style: solid;
+    border-color: #e5e7eb;
+}
+
+/* Modal Overlay (#reprocessModal) */
+.fixed { position: fixed; }
+.inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+.z-50 { z-index: 50; }
+.hidden { display: none !important; } /* Important for un-hiding/hiding logic */
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-center { justify-content: center; }
+
+/* Background Color and Opacity (bg-gray-600 bg-opacity-75) */
+/* The final, combined background rule for the semi-transparent overlay */
+.bg-gray-600.bg-opacity-75 {
+    background-color: rgba(75, 85, 99, 0.75);
+}
+
+/* Modal Content Box (the inner white box) */
+.bg-white { background-color: #fff; }
+.rounded-lg { border-radius: 0.5rem; }
+.shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+.p-6 { padding: 1.5rem; }
+.w-full { width: 100%; }
+.max-w-lg { max-width: 32rem; }
+
+/* The rest of the necessary utilities for the modal's content */
+.text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+.font-semibold { font-weight: 600; }
+.text-gray-900 { color: #111827; }
+.mb-4 { margin-bottom: 1rem; }
+.mt-4 { margin-top: 1rem; }
+.space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 1rem; }
+.appearance-none { appearance: none; }
+.block { display: block; }
+.w-full { width: 100%; }
+.px-4 { padding-left: 1rem; padding-right: 1rem; }
+.py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.border { border-width: 1px; }
+.border-gray-300 { border-color: #d1d5db; }
+.rounded { border-radius: 0.25rem; }
+
+/* Buttons */
+.bg-indigo-600 { background-color: #929BD4; }
+.bg-red-500 { background-color: #ef4444; }
+.bg-red-600 { background-color: #ef4444; }
+.hover\:bg-red-600:hover { background-color: #dc2626; } /* Adjusted for a darker hover */
+.hover\:text-black:hover { color: #000000; } /* Adjusted for a darker hover */
+.text-white { color: #fff; }
+.text-black { color: #000; }
+.bg-gray-200 { background-color: #e5e7eb; }
+.hover\:bg-gray-300:hover { background-color: #d1d5db; }
+.text-gray-700 { color: #374151; }
+.transition { transition: all 150ms ease-in-out; }
+
+/* --- Checkbox (Appearance) FIX --- */
+.form-checkbox {
+    /* Base appearance and size (from h-4 w-4) */
+    appearance: none;
+    display: inline-block;
+    vertical-align: middle;
+    height: 1rem;
+    width: 1rem;
+    
+    /* Default (Unchecked) State */
+    background-color: #fff;
+    border: 1px solid #d1d5db; /* border-gray-300 */
+    border-radius: 0.25rem; /* rounded */
+    
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0; /* Ensures it doesn't collapse inside the flex container */
+    
+    /* Ensure the text-blue-600 utility on the input is overridden for the box color */
+    color: transparent; 
+}
+
+/* --- Checkbox (Appearance) FIX --- */
+
+.form-checkbox {
+    /* CRITICAL: Explicitly define the box size and appearance */
+    appearance: none;
+    display: inline-block; /* Use inline-block for reliable rendering */
+    vertical-align: middle;
+    height: 1rem; 
+    width: 1rem;  
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+
+    /* Default (Unchecked) State */
+    background-color: #ffffff; /* Must have an explicit background */
+    border: 1px solid #d1d5db; /* gray-300 border (The visible box outline) */
+    border-radius: 0.25rem;
+    transition: all 150ms ease-in-out; 
+}
+
+/* Checked State (Color change) */
+input[type="checkbox"]:checked.form-checkbox {
+    background-color: #4f46e5; /* indigo-600 */
+    border-color: #4f46e5; /* Border must match to look solid */
+}
+
+/* Checkmark Icon (The "tick" mark) */
+input[type="checkbox"]:checked.form-checkbox::after {
+    content: ''; 
+    position: absolute; 
+    
+    /* Center the checkmark */
+    left: 4px; 
+    top: 0px; 
+    
+    width: 3px; 
+    height: 8px; 
+    
+    /* Use a white border for the checkmark shape */
+    border: solid #fff; 
+    border-width: 0 2px 2px 0; 
+    
+    /* Rotate to form the checkmark */
+    transform: rotate(45deg); 
+    display: block; 
+}
+
+/* Focus Ring State */
+input[type="checkbox"].focus\:ring-indigo-500:focus {
+    --tw-ring-color: #6366f1; /* indigo-500 */
+    --tw-ring-offset-width: 2px;
+    box-shadow: var(--tw-ring-inset) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+    outline: none; 
+}
+/* --- END Checkbox Styling FIX --- */
+
+</style>
+</head>
+<body class="p-4 sm:p-8">
+
+    <header class="flex flex-col md:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-200">
+        <h1 class="text-3xl font-extrabold text-gray-800 mb-4 md:mb-0">Transcription Dashboard</h1>
+        
+        <nav class="flex items-center space-x-4">
+            <span class="text-lg font-medium text-gray-600 hidden sm:inline">
+                Welcome, {{ current_user.username }}
+            </span>
+            <a href="{{ url_for('logout') }}" 
+               class="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-md hover:bg-red-100 transition duration-150 hover:text-black">
+                Logout
+            </a>
+        </nav>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mb-6">
+            {% for category, message in messages %}
+                <div class="p-4 mb-2 rounded-lg text-sm font-medium 
+                    {% if category == 'error' %}bg-red-100 text-red-700{% elif category == 'warning' %}bg-yellow-100 text-yellow-700{% else %}bg-green-100 text-green-700{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <section class="mb-8 p-6 bg-white rounded-xl shadow-lg border border-indigo-100">
+        <h2 class="text-2xl font-semibold text-indigo-700 mb-4 border-b pb-2">Upload Audio</h2>
+        
+        <form method="POST" action="{{ url_for('upload_and_list') }}" enctype="multipart/form-data" class="space-y-4">
+            
+            <div>
+                <label for="file" class="block text-sm font-medium text-gray-700 mb-1">Select Audio File</label>
+                <input type="file" name="file" id="file" required accept="audio/*,video/*"
+                       class="w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                <p class="mt-1 text-xs text-gray-500" id="file_help_text">Max size: {{ (config.MAX_CONTENT_LENGTH / 1024 / 1024) | round(0) }} MB. Supported formats: {{ ", ".join(config.ALLOWED_EXTENSIONS) }}</p>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row sm:space-x-6 space-y-4 sm:space-y-0 items-start">
+                
+                <div class="flex-1 w-full">
+                    <label for="model_key" class="block text-sm font-medium text-gray-700 mb-1">Whisper Model</label>
+                    <select name="model_key" id="model_key" required
+                            class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        {% for key, name in available_models.items() %}
+                            <option value="{{ key }}" {% if key == default_model %}selected{% endif %}>
+                                {{ name }} ({{ key }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="flex items-center pt-6">
+                    <input id="translate_to_en" name="translate_to_en" type="checkbox"
+                           {% if default_translate_to_en %}checked="checked"{% endif %}
+                           class="form-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                    <label for="translate_to_en" class="ml-2 block text-sm font-medium text-gray-900">
+                        Translate to English (optional)
+                    </label>
+                </div>
+                
+            </div>
+            
+            <button type="submit" 
+                    class="w-full sm:w-auto px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-150">
+                Start Transcription Job
+            </button>
+        </form>
+    </section>
+
+    <section class="p-6 bg-white rounded-xl shadow-lg">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2">My Recordings</h2>
+
+        {% if current_user.is_admin %}
+        <form method="POST" action="{{ url_for('admin_cleanup') }}" class="mb-4">
+            <button type="submit" onclick="return confirm('Are you sure you want to run the Zombie Cleanup? This will delete all DB entries whose audio files are missing from the uploads folder.')" 
+                    class="px-4 py-2 text-sm bg-yellow-100 text-yellow-800 font-medium rounded-lg hover:bg-yellow-200 transition duration-150">
+                Run Zombie Cleanup
+            </button>
+        </form>
+        {% endif %}
+
+        {% if not recordings %}
+            <div class="text-center py-10 text-gray-500">
+                <svg class="mx-auto h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No Recordings</h3>
+                <p class="mt-1 text-sm text-gray-500">Get started by uploading an audio file above.</p>
+            </div>
+        {% else %}
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                ID / Upload Date
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Original Filename
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Model / Task
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status / Progress
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for recording in recordings %}
+                        <tr id="recording-{{ recording.id }}" class="hover:bg-gray-50 transition duration-150">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900 font-semibold">#{{ recording.id }}</div>
+                                <div class="text-xs text-gray-500" title="{{ recording.created_at.isoformat() }}">
+                                    {{ recording.created_at | format_datetime }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900 break-all max-w-xs">
+                                {{ recording.original_filename }}
+                                <div class="text-xs text-gray-500">
+                                    {{ recording.filesize | file_size_format }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <div class="font-medium text-gray-900">
+                                    {{ available_models[recording.model_key] or recording.model_key }}
+                                </div>
+                                <span class="text-xs italic">
+                                    ({{ 'Translate to English' if recording.translate_to_en else 'Transcribe' }})
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="status-indicator text-sm font-medium status-{{ recording.status }}">
+                                    {{ recording.status.capitalize() }}
+                                </div>
+                                <div class="progress-bar-container mt-1 w-full bg-gray-200 rounded-full h-1.5" role="progressbar" aria-valuenow="{{ recording.progress * 100 }}" aria-valuemin="0" aria-valuemax="100">
+                                    <div class="progress-bar h-1.5 rounded-full bg-indigo-600 transition-all duration-500" style="width: {{ recording.progress * 100 }}%"></div>
+                                </div>
+                                <div class="progress-text text-xs text-gray-500 mt-1" data-progress="{{ recording.progress }}">
+                                    {% if recording.language %}
+                                        Lang: {{ recording.language }} 
+                                        {% if recording.language_probability is not none %}
+                                            <span class="text-xs text-gray-400">
+                                                ({{ (recording.language_probability * 100) | round(1) }}%)
+                                            </span>
+                                        {% endif %}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="dropdown">
+                                    <button class="menu-toggle text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-gray-100 transition duration-150">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                                        </svg>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a href="{{ url_for('transcript', rec_id=recording.id) }}" 
+                                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition duration-100">
+                                            View Transcript / Details
+                                        </a>
+
+                                        {% if recording.status == 'done' %}
+                                            <a href="{{ url_for('download_transcript', rec_id=recording.id) }}" 
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition duration-100">
+                                                Download .txt
+                                            </a>
+                                        {% endif %}
+                                        
+                                        {% if recording.status in ('done', 'error') %}
+                                            <button type="button" 
+                                                    onclick="openReprocessModal({{ recording.id }}, '{{ recording.model_name }}', '{{ 'true' if recording.translate_to_en else 'false' }}')"
+                                                    class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-100 transition duration-150">
+                                                🔁 Re-Process
+                                            </button>
+                                        {% endif %}
+
+                                        <button data-recording-id="{{ recording.id }}"
+                                                class="delete-button block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition duration-100">
+                                            Delete Record
+                                        </button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+        {% endif %}
+    </section>
+
+    <div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden flex items-center justify-center p-4 z-50 transition-opacity duration-300">
+        <div class="bg-white rounded-lg p-6 shadow-xl w-full max-w-sm">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Confirm Deletion</h3>
+            <p class="text-sm text-gray-600 mb-6">
+                Are you sure you want to delete this recording? This action is permanent and will delete the database entry, the audio file, and the transcript file.
+            </p>
+            <div class="flex justify-end space-x-3">
+                <button id="cancelDelete" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition duration-150">
+                    Cancel
+                </button>
+                <form id="deleteForm" method="POST" action="">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="rec_id" id="modalRecId">
+                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg shadow-md hover:bg-red-700 transition duration-150">
+                        Delete Permanently
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div id="reprocessModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full p-6" style="width: 500px; max-width: 95%;">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-xl font-semibold text-gray-900">Re-Process Job</h3>
+                <button id="closeReprocessModal" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+            </div>
+            
+            <form method="POST" id="reprocessForm" action="/reprocess/1"> <div class="py-4 space-y-4">
+                    <p class="text-sm text-gray-600">Select new parameters for re-processing the file.</p>
+                    
+                    <div>
+                        <label for="reprocess_model" class="block text-sm font-medium text-gray-700">Whisper Model</label>
+                        <select id="reprocess_model" name="model" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm">
+                            {% for key, name in whisper_ui_models.items() %}
+                                <option value="{{ key }}">
+                                    {{ name }} ({{ key }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="flex items-center">
+                        <input id="reprocess_translate" name="translate" type="checkbox" value="1" 
+                               {% if default_translate_to_en %}checked="checked"{% endif %}
+                               class="form-checkbox focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded">
+                        <label for="reprocess_translate" class="ml-2 block text-sm font-medium text-gray-700 select-none">
+                            Translate to English
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="cancelReprocess" class="px-4 py-2 text-sm font-medium rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 transition duration-150">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium rounded-md text-vlack bg-red-600 hover:bg-red-700 transition duration-150">
+                        Re-Process
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+<script>
+    // --- Reprocess Modal Logic (GLOBAL SCOPE) ---
+    // This function must be in the global scope to be accessible by the HTML 'onclick' attribute.
+    function openReprocessModal(id, currentModel, isTranslated) {
+        const modal = document.getElementById('reprocessModal');
+        if (!modal) return; // Safety check
+
+        // Set form action dynamically
+        const form = document.getElementById('reprocessForm');
+        form.action = `/reprocess/${id}`;
+
+        // Set current values in the modal
+        document.getElementById('reprocess_model').value = currentModel;
+        // isTranslated is passed as 'true' or 'false' string from Jinja. Convert to boolean for JS.
+        document.getElementById('reprocess_translate').checked = isTranslated === 'true';
+
+        // Show the modal
+        modal.classList.remove('hidden');
+    }
+
+    // --- All other DOM-dependent logic goes inside here ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const recordingsTable = document.querySelector('.min-w-full');
+        if (!recordingsTable) return;
+
+        // Find all 'pending' and 'processing' recordings
+        const processingRecords = Array.from(document.querySelectorAll('tr[id^="recording-"]')).filter(row => {
+            const status = row.querySelector('.status-indicator').textContent.trim().toLowerCase();
+            return status === 'pending' || status === 'processing';
+        });
+        
+        // Only poll if there are records that need updates
+        if (processingRecords.length > 0) {
+            // Poll every 3 seconds
+            setInterval(pollStatus, 3000);
+            pollStatus(); // Run immediately on load
+        }
+
+        function updateRow(row, data) {
+            const statusIndicator = row.querySelector('.status-indicator');
+            const progressBar = row.querySelector('.progress-bar');
+            const progressText = row.querySelector('.progress-text');
+            const actionsDropdown = row.querySelector('.dropdown-menu');
+
+            if (statusIndicator) {
+                // Update status text and color
+                statusIndicator.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+                statusIndicator.className = `status-indicator text-sm font-medium status-${data.status}`;
+            }
+
+            if (progressBar) {
+                // Update progress bar
+                const progress = data.progress * 100;
+                progressBar.style.width = `${progress}%`;
+            }
+            
+            if (progressText) {
+                // Update progress text
+                const currentProgress = parseFloat(progressText.dataset.progress);
+                
+                if (data.status === 'processing' || data.status === 'pending') {
+                        progressText.textContent = `Processing: ${data.progress ? (data.progress * 100).toFixed(1) : '0.0'}%`;
+                } else if (data.status === 'done' && data.language) {
+                    // START OF MODIFIED BLOCK
+                    let langText = `Lang: ${data.language}`;
+
+                    if (data.language_probability != null) {
+                        // Calculate percentage, round to 1 decimal place
+                        const percent = (data.language_probability * 100).toFixed(1);
+                        
+                        // Append the HTML structure for the styled percentage
+                        langText += `<span class="text-xs text-gray-400"> (${percent}%)</span>`;
+                    }
+                    
+                    // IMPORTANT: Change to innerHTML to render the <span> tag
+                    progressText.innerHTML = langText;
+                    // END OF MODIFIED BLOCK
+                } else {
+                    progressText.textContent = ''; // Clear for done/error if no language
+                }
+                progressText.dataset.progress = data.progress;
+            }
+            
+            
+            
+
+            // In index.html, inside the function updateRow(row, data)
+            if (actionsDropdown) {
+                // Get the container for the delete button (this is a reliable anchor point)
+                const deleteButtonContainer = actionsDropdown.querySelector('form[action*="/delete/"]');
+
+                // --- 1. Handle View Transcript Link (for 'done' or 'error') ---
+                let viewDetailsLink = actionsDropdown.querySelector('a[href*="/transcript/"]');
+                
+                if (data.status === 'done' || data.status === 'error') {
+                    // Create the link if it doesn't exist
+                    if (!viewDetailsLink) {
+                        viewDetailsLink = document.createElement('a');
+                        viewDetailsLink.className = "block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition duration-100";
+                        viewDetailsLink.textContent = "👁️ View Transcript";
+                        
+                        // Insert it right before the delete button/form
+                        if (deleteButtonContainer) {
+                            actionsDropdown.insertBefore(viewDetailsLink, deleteButtonContainer);
+                        } else {
+                            actionsDropdown.appendChild(viewDetailsLink);
+                        }
+                    }
+                    // Always ensure the URL is correct and updated
+                    viewDetailsLink.href = `{{ url_for('transcript', rec_id=0) }}`.replace('/0', '/' + data.id);
+                } else if (viewDetailsLink) {
+                    // If status is pending/processing, remove the link if it exists
+                    viewDetailsLink.remove();
+                }
+                
+                // --- 2. Handle Download Link (for 'done' only) ---
+                let downloadLink = actionsDropdown.querySelector('a[href*="/download/"]');
+                
+                if (data.status === 'done') {
+                    // Create the download link if it doesn't exist
+                    if (!downloadLink) {
+                        downloadLink = document.createElement('a');
+                        downloadLink.className = "block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition duration-100";
+                        downloadLink.textContent = "⬇️ Download .txt";
+                        downloadLink.href = `{{ url_for('download_transcript', rec_id=0) }}`.replace('/0', '/' + data.id);
+                        
+                        // Insert it after the View link, but before the delete button
+                        const insertBeforeElement = viewDetailsLink || deleteButtonContainer;
+                        if (insertBeforeElement) {
+                            // Insert after the View link, if present, otherwise before the Delete form
+                            actionsDropdown.insertBefore(downloadLink, insertBeforeElement.nextSibling || deleteButtonContainer);
+                        } else {
+                            actionsDropdown.appendChild(downloadLink);
+                        }
+                    }
+                } else if (downloadLink) {
+                    // If status is not 'done', remove the download link
+                    downloadLink.remove();
+                }
+                
+                // --- 3. Handle Re-Process Link/Modal Button Visibility ---
+                const reprocessButton = actionsDropdown.querySelector('button[onclick^="openReprocessModal"]');
+
+                if (reprocessButton) {
+                    const reprocessContainer = reprocessButton.closest('button') || reprocessButton.closest('form');
+                    if (reprocessContainer) {
+                        if (data.status === 'done' || data.status === 'error') {
+                            reprocessContainer.style.display = 'block';
+                        } else {
+                            reprocessContainer.style.display = 'none';
+                        }
+                    }
+                }
+            }
+
+        }
+
+
+        function pollStatus() {
+            // Re-identify records that need updates (i.e., not 'done' or 'error')
+            const recordsToPoll = Array.from(document.querySelectorAll('tr[id^="recording-"]')).filter(row => {
+                const status = row.querySelector('.status-indicator').textContent.trim().toLowerCase();
+                return status === 'pending' || status === 'processing';
+            });
+
+            recordsToPoll.forEach(row => {
+                const recId = row.id.split('-')[1];
+                fetch(`{{ url_for('get_status', rec_id=0) }}`.replace('/0', '/' + recId))
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status) {
+                            updateRow(row, data);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error polling status:', error);
+                    });
+            });
+        }
+        
+        function formatLanguageWithProbability(language, probability) {
+            if (!language) {
+                return 'N/A';
+            }
+
+            let text = language;
+            
+            // Check if probability exists and is a valid number
+            if (probability !== null && typeof probability === 'number') {
+                // Convert to percentage and round to 1 decimal
+                const percent = (probability * 100).toFixed(1);
+                
+                // This constructs the HTML with the small, gray text styling
+                text += ` <span class="text-xs text-gray-400">(${percent}%)</span>`;
+            }
+            
+            return text;
+        }
+        
+        // --- Delete Modal Logic ---
+        const deleteModal = document.getElementById('deleteModal');
+        const cancelDelete = document.getElementById('cancelDelete');
+        const deleteForm = document.getElementById('deleteForm');
+        const modalRecId = document.getElementById('modalRecId');
+
+        document.querySelectorAll('.delete-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const recId = e.currentTarget.dataset.recordingId;
+                
+                // Set the recording ID for the form submission
+                modalRecId.value = recId; 
+                // For the sake of this exercise, let's assume a DELETE method on a different route:
+                deleteForm.action = `/delete/${recId}`;
+                deleteModal.classList.remove('hidden');
+                
+                // Close the dropdown immediately upon opening the modal
+                button.closest('.dropdown')?.classList.remove('open');
+            });
+        });
+        
+        cancelDelete.addEventListener('click', () => {
+            deleteModal.classList.add('hidden');
+        });
+
+        // Close delete modal when clicking outside
+        deleteModal.addEventListener('click', (e) => {
+            if (e.target === deleteModal) {
+                deleteModal.classList.add('hidden');
+            }
+        });
+        
+        // --- Dropdown Toggle Fix ---
+        // Listen only to the specific button that toggles the menu, not the whole container
+        document.querySelectorAll('.menu-toggle').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation(); // Prevent event from closing the menu via the document listener
+                
+                const dropdown = button.closest('.dropdown');
+                
+                // Close all other open dropdowns
+                document.querySelectorAll('.dropdown.open').forEach(d => {
+                    if (d !== dropdown) d.classList.remove('open');
+                });
+                
+                // Toggle the current dropdown
+                dropdown.classList.toggle('open');
+            });
+        });
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('open'));
+            }
+        });
+        
+        // --- Reprocess Modal Closing Logic (Moved and integrated) ---
+        const reprocessModal = document.getElementById('reprocessModal');
+        if (reprocessModal) {
+            reprocessModal.addEventListener('click', (e) => {
+                if (e.target === reprocessModal || e.target.closest('#closeReprocessModal')) {
+                    reprocessModal.classList.add('hidden');
+                }
+            });
+            // Also add logic to close the modal when pressing the Cancel button inside it
+            document.getElementById('cancelReprocess')?.addEventListener('click', (e) => {
+                reprocessModal.classList.add('hidden');
+            });
+        }
+    });
+</script>
+</body>
+</html>

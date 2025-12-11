@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Transcript - {{ recording.original_filename or recording.filename }}</title> 
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Copied status colors from index.html for consistent styling */
+        body { font-family: 'Inter', sans-serif; background-color: #f7fafc; }
+        :root {
+            --status-pending: #f97316; /* orange-600 */
+            --status-processing: #2563eb; /* blue-600 */
+            --status-done: #10b981; /* emerald-500 */
+            --status-error: #ef4444; /* red-500 */
+        }
+        .status-pending { color: var(--status-pending); } 
+        .status-processing { color: var(--status-processing); } 
+        .status-done { color: var(--status-done); } 
+        .status-error { color: var(--status-error); } 
+        /* Pre-wrap is for preserving whitespace (like newlines) in the transcript */
+        .whitespace-pre-wrap {
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="mb-4">
+                {% for category, message in messages %}
+                    <li class="p-3 mb-2 rounded-lg text-sm {% if category == 'error' %}bg-red-100 text-red-700{% elif category == 'warning' %}bg-yellow-100 text-yellow-700{% else %}bg-green-100 text-green-700{% endif %}">
+                        {{ message }}
+                    </li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <header class="pb-4 border-b border-gray-200 flex justify-between items-center">
+            <h1 class="text-3xl font-bold text-gray-900">Transcript for: {{ recording.original_filename or recording.filename }}</h1>
+            <a href="{{ url_for('upload_and_list') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                &larr; Back to Dashboard
+            </a>
+        </header>
+
+        <main class="mt-8">
+            <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8 p-6">
+                <h2 class="text-xl leading-6 font-medium text-gray-900 mb-4">File Details</h2>
+                <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                    <div class="sm:col-span-1">
+                        <dt class="font-medium text-gray-500">Model Used</dt>
+                        <dd class="mt-1 text-gray-900">{{ WHISPER_UI_MODELS[recording.model_key] or recording.model_key }}</dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="font-medium text-gray-500">File Size</dt>
+                        <dd class="mt-1 text-gray-900">
+                            {{ recording.filesize | file_size_format if recording.filesize is not none else 'N/A' }}
+                        </dd>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <dt class="font-medium text-gray-500">Language Detected</dt>
+                        <dd class="mt-1 text-gray-900">
+                            {% if recording.language is defined and recording.language %}
+                                {{ recording.language }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </dd>
+                    </div>
+
+                    <div class="sm:col-span-1">
+                        <dt class="font-medium text-gray-500">Confidence Score</dt>
+                        <dd class="mt-1 text-gray-900">
+                            {% if recording.language_probability is defined and recording.language_probability is not none %}
+                                {{ (recording.language_probability * 100) | round(2) }}%
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+
+            <section class="mb-8">
+                <h2 class="text-xl leading-6 font-medium text-gray-900 mb-4">Original Audio</h2>
+                <audio controls class="w-full rounded-lg shadow-md bg-white p-2">
+                    <source src="{{ url_for('serve_audio', rec_id=recording.id) }}">
+                    Your browser does not support the audio element.
+                </audio>
+                <p class="text-sm text-gray-500 mt-2">
+                    *Audio player is enabled because file deletion is disabled in the worker.
+                </p>
+            </section>
+            
+            <section class="mb-8">
+                <h2 class="text-xl leading-6 font-medium text-gray-900 mb-4">Transcription Result</h2>
+
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex items-center space-x-2">
+                        {% if recording.translate_to_en %}
+                        <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+                            Translated to English
+                        </span>
+                        {% endif %}
+                    </div>
+                    <button id="speakButton" 
+                            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400"
+                            {% if recording.status != 'done' %}disabled{% endif %}>
+                        <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 3v14a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.545 6.75a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v6.5a.75.75 0 01-.75.75h-.008a.75.75 0 01-.75-.75v-6.5zm-2.09 1.5a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v3.5a.75.75 0 01-.75.75h-.008a.75.75 0 01-.75-.75v-3.5z" clip-rule="evenodd" />
+                        </svg>
+                        Read Aloud
+                    </button>
+                </div>
+
+                <div id="textToSpeak" class="p-6 bg-gray-50 border border-gray-200 rounded-lg text-gray-800 whitespace-pre-wrap">
+                    {% if recording.status == 'done' or recording.status == 'error' %}
+                        {{ recording.transcript | word_break_text }}
+                    {% else %}
+                        <p class="text-gray-500">Transcription is {{ recording.status }}. Please refresh to check for the final result.</p>
+                    {% endif %}
+                </div>
+                
+                {% if recording.status == 'error' and recording.transcript %}
+                    <div class="mt-4 p-3 bg-red-100 border border-red-300 rounded-lg text-sm text-red-800">
+                        <strong>Error Details:</strong> {{ recording.transcript }}
+                    </div>
+                {% endif %}
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Note: SSE/Live stream logic has been removed. Status updates are polled 
+            // from the main dashboard (index.html), so this page requires a manual 
+            // refresh to see the final transcript if it was 'processing'.
+        });
+
+        // --- Speak Button Logic ---
+        const transcriptOutput = document.getElementById('textToSpeak'); 
+        const speakButton = document.getElementById('speakButton');
+
+        if (speakButton && transcriptOutput) {
+            speakButton.addEventListener('click', () => {
+                // Use textContent to strip <br> tags for clean speech synthesis input
+                const text = transcriptOutput.textContent; 
+                if ('speechSynthesis' in window) {
+                    // Stop any current speech
+                    if (window.speechSynthesis.speaking) {
+                        window.speechSynthesis.cancel();
+                    }
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    alert("Text-to-speech is not supported in your browser.");
+                }
+            });
+        }
+    </script>
+</body>
+</html>

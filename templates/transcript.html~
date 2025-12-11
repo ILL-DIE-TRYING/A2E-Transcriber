@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Transcript - {{ recording.filename }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Use Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7fafc; }
+        .audio-player {
+            width: 100%;
+            max-width: 100%;
+        }
+        .transcript-container {
+            border: 1px solid #e2e8f0; /* gray-200 */
+            border-radius: 0.5rem; /* rounded-lg */
+            padding: 1.5rem; /* p-6 */
+            background-color: #ffffff;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06); /* shadow-inner */
+            min-height: 200px;
+        }
+        pre {
+            white-space: pre-wrap; /* Preserve formatting but allow wrapping */
+            word-wrap: break-word; /* Ensure long words break */
+            font-family: inherit; /* Use Inter font */
+            margin: 0;
+            line-height: 1.6;
+        }
+        .btn-primary {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background-color: #4f46e5; /* indigo-600 */
+            color: white;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            transition: background-color 150ms;
+        }
+        .btn-primary:hover {
+            background-color: #4338ca; /* indigo-700 */
+        }
+    </style>
+</head>
+
+<body class="p-4 sm:p-8">
+
+    <div class="max-w-4xl mx-auto bg-white p-6 md:p-10 rounded-xl shadow-2xl">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-2">Transcript for: <span class="text-indigo-600">{{ recording.filename }}</span></h1>
+        
+        <!-- Model Used Info -->
+        <div class="mb-4 text-sm text-gray-500">
+            Processed using model key: <span class="font-semibold text-gray-700">{{ recording.model_key | default('N/A') }}</span>
+        </div>
+
+        <!-- Audio Player Section -->
+        <div class="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50 shadow-inner">
+            <h2 class="text-xl font-semibold text-gray-700 mb-3">Audio Playback</h2>
+            <!-- The audio player uses the /audio/<id> route to fetch the file -->
+            <audio controls class="audio-player">
+                <!-- Dynamically set the MIME type based on the file extension -->
+                <source src="{{ url_for('serve_audio', rec_id=recording.id) }}" type="audio/{{ recording.filename.split('.')[-1] }}">
+                Your browser does not support the audio element.
+            </audio>
+        </div>
+
+        <!-- Transcript Section -->
+        <h2 class="text-xl font-semibold text-gray-700 mb-3">Transcript</h2>
+        <div class="transcript-container" id="textToSpeak">
+            <!-- Use <pre> tag with custom CSS to ensure proper line wrapping and formatting -->
+            <pre class="text-gray-800 text-base" >{{ recording.transcript }}</pre>
+        </div>
+        
+        <div class="mt-8 flex space-x-4">
+            <a href="{{ url_for('upload_and_list') }}" 
+               class="btn-primary">
+                &larr; Back to Recordings List
+            </a>
+            <a href="{{ url_for('download_transcript', rec_id=recording.id) }}" 
+               class="px-4 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition duration-150">
+                Download Transcript (.txt)
+            </a>
+			<button id="speakButton">Speak</button>
+        </div>
+    </div>
+<script>
+    // 1. Get references to the HTML elements
+    const speakButton = document.getElementById('speakButton');
+    const textToSpeak = document.getElementById('textToSpeak');
+
+    // 2. Add an event listener to the button
+    speakButton.addEventListener('click', () => {
+        // Get the value from the <div> using .textContent
+        const text = textToSpeak.textContent; // <-- Corrected line
+
+        // Ensure there is text to speak
+        if (text.trim().length > 0) {
+            // Create a new SpeechSynthesisUtterance object
+            const utterance = new SpeechSynthesisUtterance(text);
+
+            // Use the browser's speech synthesis engine to speak the text
+            window.speechSynthesis.speak(utterance);
+        } else {
+            alert('Please enter some text to speak.');
+        }
+    });
+</script>
+</body>
+</html>
