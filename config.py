@@ -3,12 +3,13 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 # --- CORE APPLICATION SETTINGS ---
-SERVER_PORT = 8090
+SERVER_PORT = 8090 # Port this application listens on
 SECRET_KEY = 'a-super-secret-key-for-flash' # CHANGE THIS IN PRODUCTION!
 MAX_CONTENT_LENGTH = 100 * 1024 * 1024 # 100 MB limit
-DATABASE_URI = 'sqlite:///database.db'
+DATABASE_URI = 'sqlite:///database.db' # Database setup
 
 ## DISABLE THIS ONCE YOU GET GOING
+## Set to "True" it will show all kinds of debugging information in the terminal
 DEBUG_MODE = True
 
 # --- SECURITY & USER SETTINGS ---
@@ -34,6 +35,7 @@ os.makedirs(TRANSCRIPT_FOLDER, exist_ok=True)
 
 # Assuming your model files are named ggml-{model_key}.bin
 # Be sure to download the models using the whisper tool!
+# You can add larger models if your computer can handle them
 MODEL_FILENAMES = {
     "tiny": "ggml-tiny.bin",
     "base": "ggml-base.bin",
@@ -42,7 +44,7 @@ MODEL_FILENAMES = {
 }
 
 # Models displayed in the UI
-# This and AVAILABLE_MODELS need to match!
+# This and MODEL_FILENAMES and AVAILABLE_MODELS need to match (Not text but models)!
 WHISPER_UI_MODELS = {
     "tiny": "Tiny (Fastest, Least Accurate)",
     "base": "Base",
@@ -51,7 +53,7 @@ WHISPER_UI_MODELS = {
 }
 
 # New dictionary mapping model keys to the actual model file base name (e.g., 'base' -> 'base')
-# If you have enough machine, you can expand this to large, etc. Be sure to download the proper models you want to use.
+# If you have enough machine, you can expand this to large, etc. Be sure to download the proper models you want to use. (See README)
 # Raspberry PI seriously struggles with medium. It takes a long time with small even.
 AVAILABLE_MODELS = {
     "tiny": "tiny",
@@ -67,10 +69,13 @@ WHISPER_ROOT = os.path.abspath(
     os.path.join(BASE_DIR, os.pardir, 'whisper.cpp')
 )
 
-# 2. WHISPER_PATH points to the root for models and the cli utility
+# 2. WHISPER_PATH points to the root for models and the cli utility (Whisper Version 1.8.1
 WHISPER_PATH = os.path.join(WHISPER_ROOT, 'build', 'bin', 'whisper-cli')
 
 # --- WORKER & EXECUTION SETTINGS ---
+# This is where you can tune how agressive Whisper.cpp is on your CPU.
+# I used the intial setting with a Intel(R) Core(TM) i7-4770 CPU @ 3.40GHz
+
 # Maximum concurrent worker threads for the queue monitor
 MAX_WORKERS = 1 
 # Number of CPU threads to use for Whisper processing (--threads)
