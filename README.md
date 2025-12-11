@@ -3,7 +3,7 @@
 Built with Python and requires Whisper.cpp to be compiled and sitting in a directory directly next to the transcriber directory.
 
 Note! This will run on a Raspberry PI 4 8GB but is extremely slow when using the "small" or "medium" Whisper models.
-The faster your machine is (specially the GPU) the faster the translation will happen.
+The faster your machine is (especially the GPU) the faster the translation will happen.
 This code could also be altered to run the larger (smarter) models on a faster machine.
 
 Only tested on Linux (Mint 22)
