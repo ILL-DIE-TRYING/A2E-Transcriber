@@ -106,8 +106,8 @@ Description=Local Audio Tanscriber
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/python3 /home/pi/transcriber/app.py
-WorkingDirectory=/home/pi/transcriber
+ExecStart=/usr/bin/python3 /home/pi/A2E-Transcriber/app.py
+WorkingDirectory=/home/pi/A2E-Transcriber
 Restart=always
 User=pi
 
