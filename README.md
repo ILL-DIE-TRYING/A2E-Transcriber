@@ -13,7 +13,7 @@ Only tested on Linux (Mint 22)
 ```
 BASE_DIR
           |
-		  -- translator
+		  -- A2E-Transcriber
 		  |
 		  -- whisper.cpp
 ```
@@ -33,7 +33,7 @@ make
 ### Download whisper models
 
 ```
-cd ~/whisper.cpp/models
+cd whisper.cpp/models
 ./download-ggml-model.sh tiny
 ./download-ggml-model.sh small
 ./download-ggml-model.sh base
@@ -51,7 +51,7 @@ git clone https://github.com/ILL-DIE-TRYING/A2E-Transcriber
 ### Enable user registration in config.py, register your user, and the IMMEDIATLY disable user registration (IMPORTANT!)
 
 ```
-cd ~/A2E-Transcriber
+cd A2E-Transcriber
 nano config.py
 ```
 
