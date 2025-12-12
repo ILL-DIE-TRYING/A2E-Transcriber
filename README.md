@@ -1,5 +1,8 @@
 ## A2E-Transcriber
 ### An "Anything To English" audio transcription interface created with AI.
+### `#ff0000` WARNING! THIS CODE WAS MOSTLY WRITTEN BY AI.
+### `#ff0000` I AM NOT A PYTHON DEVELOPER BUT HAVE A FEW DECADES UNDER MY BELT WITH PHP
+### `#ff0000` I CANNOT GUARANTEE THE VALIDITY OR SANITY FO THIS CODE (ALTHOUGH IT LOOKS ALRIGHT TO ME) ;)
 Built with Python and requires Whisper.cpp to be compiled and sitting in a directory directly next to the transcriber directory.
 
 Note! This will run on a Raspberry PI 4 8GB but is extremely slow when using the "small" or "medium" Whisper models.
