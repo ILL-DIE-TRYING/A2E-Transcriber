@@ -44,6 +44,7 @@ body {
 .dropdown {
     position: relative; 
     display: inline-block; 
+    width:60%;
 }
 
 .dropdown-menu {
@@ -260,6 +261,7 @@ body {
 .appearance-none { appearance: none; }
 .block { display: block; }
 .w-full { width: 100%; }
+.h-full { height: 100%; }
 .px-4 { padding-left: 1rem; padding-right: 1rem; }
 .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
 .border { border-width: 1px; }
@@ -278,6 +280,12 @@ body {
 .hover\:bg-gray-300:hover { background-color: #d1d5db; }
 .text-gray-700 { color: #374151; }
 .transition { transition: all 150ms ease-in-out; }
+
+.custom-menu {
+ border-radius: 5px;
+ padding:2px;
+ background-color: #929BD4;
+}
 
 /* Custom CSS */
 .header-title {
@@ -441,7 +449,7 @@ input[type="checkbox"].focus\:ring-indigo-500:focus {
             </div>
             
             <button type="submit" 
-                    class="w-full sm:w-auto px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-150">
+                    class="w-full sm:w-auto px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-150" style="height:40px;">
                 Start Transcription Job
             </button>
         </form>
@@ -471,18 +479,22 @@ input[type="checkbox"].focus\:ring-indigo-500:focus {
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
+                            <!--
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                ID / Upload Date
+                                ID
                             </th>
+                            -->
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Original Filename
+                                Files
                             </th>
+                            <!--
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Model / Task
                             </th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Status / Progress
                             </th>
+                            -->
                             <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Actions
                             </th>
@@ -491,18 +503,53 @@ input[type="checkbox"].focus\:ring-indigo-500:focus {
                     <tbody class="bg-white divide-y divide-gray-200">
                         {% for recording in recordings %}
                         <tr id="recording-{{ recording.id }}" class="hover:bg-gray-50 transition duration-150">
+                            <!--
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900 font-semibold">#{{ recording.id }}</div>
+                                
+                            </td>
+                            -->
+                            <td class="px-6 py-4 text-sm text-gray-900 break-all max-w-xs">
+                                <a href="{{ url_for('transcript', rec_id=recording.id) }}">
+                                {{ recording.original_filename }}
+                                
                                 <div class="text-xs text-gray-500" title="{{ recording.created_at.isoformat() }}">
                                     {{ recording.created_at | format_datetime }}
                                 </div>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-gray-900 break-all max-w-xs">
-                                {{ recording.original_filename }}
+                                
+                                <div class="status-indicator text-sm font-medium status-{{ recording.status }}">
+                                    {{ recording.status.capitalize() }}
+                                </div>
+                                <div class="progress-bar-container mt-1 w-full bg-gray-200 rounded-full h-1.5" role="progressbar" aria-valuenow="{{ recording.progress * 100 }}" aria-valuemin="0" aria-valuemax="100">
+                                    <div class="progress-bar h-1.5 rounded-full bg-indigo-600 transition-all duration-500" style="width: {{ recording.progress * 100 }}%"></div>
+                                </div>
+                                
+                                
+                                <div class="text-xs text-gray-500">
+                                    {{ available_models[recording.model_key] or recording.model_key }}
+                                </div>
+                                <span class="text-xs text-gray-500">
+                                    ({{ 'Translate to English' if recording.translate_to_en else 'Transcribe' }})
+                                </span>
+                                <div class="progress-text text-xs text-gray-500 mt-1" data-progress="{{ recording.progress }}">
+                                    {% if recording.language %}
+                                        Lang: {{ recording.language }} 
+                                        {% if recording.language_probability is not none %}
+                                            <span class="text-xs text-gray-400">
+                                                ({{ (recording.language_probability * 100) | round(1) }}%)
+                                            </span>
+                                        {% endif %}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </div>
                                 <div class="text-xs text-gray-500">
                                     {{ recording.filesize | file_size_format }}
                                 </div>
+                                
+                                </a>
                             </td>
+                            <!--
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 <div class="font-medium text-gray-900">
                                     {{ available_models[recording.model_key] or recording.model_key }}
@@ -531,36 +578,45 @@ input[type="checkbox"].focus\:ring-indigo-500:focus {
                                     {% endif %}
                                 </div>
                             </td>
+                            -->
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <div class="dropdown">
-                                    <button class="menu-toggle text-indigo-600 hover:text-indigo-900 p-2 rounded-full hover:bg-gray-100 transition duration-150">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                                <div class="dropdown w-full h-full">
+                                    <button 
+                                    class="menu-toggle w-full h-full flex items-center justify-center text-indigo-600 hover:text-white bg-transparent hover:bg-indigo-600 p-0 rounded-none transition duration-150">
+                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+                                            <path 
+                                            fill-rule="evenodd" 
+                                            d="M3 5.25a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75A.75.75 0 013 5.25zm0 4.5a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75zm0 4.5a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75zm0 4.5a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75z" 
+                                            clip-rule="evenodd" />
                                         </svg>
                                     </button>
-                                    <div class="dropdown-menu">
-                                        <a href="{{ url_for('transcript', rec_id=recording.id) }}" 
-                                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition duration-100">
-                                            View Transcript / Details
+                                    <div class="dropdown-menu custom-menu bg-indigo-600" >
+                                        <a href="{{ url_for('transcript', rec_id=recording.id) }}">
+                                            <button type="button" 
+                                                class="block w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-red-100 transition duration-150">
+                                            View Transcript
+                                            </button>
                                         </a>
 
                                         {% if recording.status == 'done' %}
-                                            <a href="{{ url_for('download_transcript', rec_id=recording.id) }}" 
-                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition duration-100">
+                                            <a href="{{ url_for('download_transcript', rec_id=recording.id) }}">
+                                               <button type="button" 
+                                                class="block w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-red-100 transition duration-150">
                                                 Download .txt
+                                                </button>
                                             </a>
                                         {% endif %}
                                         
                                         {% if recording.status in ('done', 'error') %}
                                             <button type="button" 
                                                     onclick="openReprocessModal({{ recording.id }}, '{{ recording.model_name }}', '{{ 'true' if recording.translate_to_en else 'false' }}')"
-                                                    class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-100 transition duration-150">
+                                                    class="block w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-red-100 transition duration-150">
                                                 🔁 Re-Process
                                             </button>
                                         {% endif %}
 
                                         <button data-recording-id="{{ recording.id }}"
-                                                class="delete-button block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition duration-100">
+                                                class="delete-button block w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-red-100 transition duration-150">
                                             Delete Record
                                         </button>
                                     </div>
@@ -727,69 +783,116 @@ input[type="checkbox"].focus\:ring-indigo-500:focus {
             // In index.html, inside the function updateRow(row, data)
             if (actionsDropdown) {
                 // Get the container for the delete button (this is a reliable anchor point)
-                const deleteButtonContainer = actionsDropdown.querySelector('form[action*="/delete/"]');
+                // NOTE: Based on your HTML, the delete button is a <button> directly, not inside a form.
+                // We'll query for the Delete Record button as the anchor.
+                const deleteButton = actionsDropdown.querySelector('button[data-recording-id]');
 
                 // --- 1. Handle View Transcript Link (for 'done' or 'error') ---
-                let viewDetailsLink = actionsDropdown.querySelector('a[href*="/transcript/"]');
-                
+                let viewDetailsAnchor = actionsDropdown.querySelector('a[href*="/transcript/"]');
+
                 if (data.status === 'done' || data.status === 'error') {
-                    // Create the link if it doesn't exist
-                    if (!viewDetailsLink) {
-                        viewDetailsLink = document.createElement('a');
-                        viewDetailsLink.className = "block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition duration-100";
-                        viewDetailsLink.textContent = "👁️ View Transcript";
+                    if (!viewDetailsAnchor) {
+                        // 1. Create the <a> tag
+                        viewDetailsAnchor = document.createElement('a');
                         
-                        // Insert it right before the delete button/form
-                        if (deleteButtonContainer) {
-                            actionsDropdown.insertBefore(viewDetailsLink, deleteButtonContainer);
+                        // 2. Create the inner <button> tag to hold the text and classes
+                        const viewDetailsButton = document.createElement('button');
+                        viewDetailsButton.type = 'button';
+                        viewDetailsButton.className = "block w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-red-100 transition duration-150";
+                        viewDetailsButton.textContent = "View Transcript";
+
+                        // 3. Append the button to the anchor
+                        viewDetailsAnchor.appendChild(viewDetailsButton);
+
+                        // Insert it right before the delete button
+                        if (deleteButton) {
+                            actionsDropdown.insertBefore(viewDetailsAnchor, deleteButton);
                         } else {
-                            actionsDropdown.appendChild(viewDetailsLink);
+                            actionsDropdown.appendChild(viewDetailsAnchor);
                         }
                     }
                     // Always ensure the URL is correct and updated
-                    viewDetailsLink.href = `{{ url_for('transcript', rec_id=0) }}`.replace('/0', '/' + data.id);
-                } else if (viewDetailsLink) {
+                    viewDetailsAnchor.href = `{{ url_for('transcript', rec_id=0) }}`.replace('/0', '/' + data.id);
+                } else if (viewDetailsAnchor) {
                     // If status is pending/processing, remove the link if it exists
-                    viewDetailsLink.remove();
+                    viewDetailsAnchor.remove();
                 }
-                
-                // --- 2. Handle Download Link (for 'done' only) ---
-                let downloadLink = actionsDropdown.querySelector('a[href*="/download/"]');
-                
-                if (data.status === 'done') {
-                    // Create the download link if it doesn't exist
-                    if (!downloadLink) {
-                        downloadLink = document.createElement('a');
-                        downloadLink.className = "block px-4 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition duration-100";
-                        downloadLink.textContent = "⬇️ Download .txt";
-                        downloadLink.href = `{{ url_for('download_transcript', rec_id=0) }}`.replace('/0', '/' + data.id);
-                        
-                        // Insert it after the View link, but before the delete button
-                        const insertBeforeElement = viewDetailsLink || deleteButtonContainer;
-                        if (insertBeforeElement) {
-                            // Insert after the View link, if present, otherwise before the Delete form
-                            actionsDropdown.insertBefore(downloadLink, insertBeforeElement.nextSibling || deleteButtonContainer);
-                        } else {
-                            actionsDropdown.appendChild(downloadLink);
-                        }
-                    }
-                } else if (downloadLink) {
-                    // If status is not 'done', remove the download link
-                    downloadLink.remove();
-                }
-                
-                // --- 3. Handle Re-Process Link/Modal Button Visibility ---
-                const reprocessButton = actionsDropdown.querySelector('button[onclick^="openReprocessModal"]');
 
-                if (reprocessButton) {
-                    const reprocessContainer = reprocessButton.closest('button') || reprocessButton.closest('form');
-                    if (reprocessContainer) {
-                        if (data.status === 'done' || data.status === 'error') {
-                            reprocessContainer.style.display = 'block';
+                // --- 2. Handle Download Link (for 'done' only) ---
+                let downloadAnchor = actionsDropdown.querySelector('a[href*="/download/"]');
+
+                if (data.status === 'done') {
+                    if (!downloadAnchor) {
+                        // 1. Create the <a> tag
+                        downloadAnchor = document.createElement('a');
+                        
+                        // 2. Create the inner <button> tag to hold the text and classes
+                        const downloadButton = document.createElement('button');
+                        downloadButton.type = 'button';
+                        downloadButton.className = "block w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-red-100 transition duration-150";
+                        downloadButton.textContent = "Download .txt"; // Text only, as the icon is in the static HTML
+                        
+                        // 3. Append the button to the anchor
+                        downloadAnchor.appendChild(downloadButton);
+                        downloadAnchor.href = `{{ url_for('download_transcript', rec_id=0) }}`.replace('/0', '/' + data.id);
+
+                        // Determine insertion point
+                        const insertBeforeElement = downloadAnchor || deleteButton;
+                        if (viewDetailsAnchor && viewDetailsAnchor.nextSibling) {
+                            // Insert after the View link
+                            actionsDropdown.insertBefore(downloadAnchor, viewDetailsAnchor.nextSibling);
+                        } else if (deleteButton) {
+                            // Insert before the Delete button
+                            actionsDropdown.insertBefore(downloadAnchor, deleteButton);
                         } else {
-                            reprocessContainer.style.display = 'none';
+                            actionsDropdown.appendChild(downloadAnchor);
                         }
                     }
+                } else if (downloadAnchor) {
+                    // If status is not 'done', remove the download link
+                    downloadAnchor.remove();
+                }
+                
+                // --- 3. Handle Re-Process Button Visibility (Show ONLY on 'done') ---
+
+                // Query for the existing reprocess button
+                let reprocessButton = actionsDropdown.querySelector('button[onclick^="openReprocessModal"]');
+
+                if (data.status === 'done') { // <<< CONDITION: Show only if status is 'done'
+                    // If it should be shown, check if it needs to be created
+                    if (!reprocessButton) {
+                        
+                        // 1. Create the <button> element directly
+                        reprocessButton = document.createElement('button');
+                        reprocessButton.type = 'button';
+                        reprocessButton.textContent = "🔁 Re-Process";
+                        
+                        // 2. Set the required classes and dynamic onclick handler
+                        reprocessButton.className = "block w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-red-100 transition duration-150";
+                        reprocessButton.setAttribute('onclick', `openReprocessModal(${data.id}, '${data.model_name}', '${data.translate_to_en ? 'true' : 'false'}')`);
+                        
+                        // 3. Insertion Point Logic: After Download link, before Delete.
+                        let insertBeforeElement = deleteButton; // Default: insert before Delete button
+
+                        // Insert after the Download link, or before Delete.
+                        if (downloadAnchor && downloadAnchor.nextSibling) {
+                             // Insert after the download anchor's parent link (a)
+                             insertBeforeElement = downloadAnchor.nextSibling;
+                        } else if (downloadAnchor) {
+                            // Insert before the Delete button if Download is present but its next sibling is the Delete button
+                             insertBeforeElement = deleteButton;
+                        } 
+                        
+                        // Insert the Re-Process button
+                        if (insertBeforeElement) {
+                            actionsDropdown.insertBefore(reprocessButton, insertBeforeElement);
+                        } else {
+                            actionsDropdown.appendChild(reprocessButton);
+                        }
+                    }
+                } else if (reprocessButton) {
+                    // If status is NOT 'done' AND it currently exists, remove it
+                    reprocessButton.remove();
                 }
             }
 

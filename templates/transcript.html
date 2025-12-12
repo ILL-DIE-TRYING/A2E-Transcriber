@@ -40,7 +40,7 @@
         {% endwith %}
 
         <header class="pb-4 border-b border-gray-200 flex justify-between items-center">
-            <h1 class="text-3xl font-bold text-gray-900">Transcript for: {{ recording.original_filename or recording.filename }}</h1>
+            
             <a href="{{ url_for('upload_and_list') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 &larr; Back to Dashboard
             </a>
@@ -48,8 +48,13 @@
 
         <main class="mt-8">
             <div class="bg-white shadow overflow-hidden sm:rounded-lg mb-8 p-6">
-                <h2 class="text-xl leading-6 font-medium text-gray-900 mb-4">File Details</h2>
                 <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                
+                    <div class="sm:col-span-1">
+                        <dt class="font-medium text-gray-500">Filename</dt>
+                        <dd class="mt-1 text-gray-900">{{ recording.original_filename or recording.filename }}</dd>
+                    </div>
+                    
                     <div class="sm:col-span-1">
                         <dt class="font-medium text-gray-500">Model Used</dt>
                         <dd class="mt-1 text-gray-900">{{ WHISPER_UI_MODELS[recording.model_key] or recording.model_key }}</dd>
@@ -81,6 +86,13 @@
                             {% endif %}
                         </dd>
                     </div>
+                    <div class="flex items-center space-x-2">
+                        {% if recording.translate_to_en %}
+                        <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+                            Translated to English
+                        </span>
+                        {% endif %}
+                    </div>
                 </dl>
             </div>
 
@@ -95,14 +107,8 @@
             <section class="mb-8">
                 <h2 class="text-xl leading-6 font-medium text-gray-900 mb-4">Transcription Result</h2>
 
-                <div class="flex justify-between items-center mb-3">
-                    <div class="flex items-center space-x-2">
-                        {% if recording.translate_to_en %}
-                        <span class="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
-                            Translated to English
-                        </span>
-                        {% endif %}
-                    </div>
+                <div class="flex items-left mb-3">
+                    
                     <button id="speakButton" 
                             class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400"
                             {% if recording.status != 'done' %}disabled{% endif %}>
@@ -111,6 +117,15 @@
                         </svg>
                         Read Aloud
                     </button>
+                    <button id="stopButton" 
+                            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-gray-400"
+                            {% if recording.status != 'done' %}disabled{% endif %}>
+                        <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 3v14a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.545 6.75a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v6.5a.75.75 0 01-.75.75h-.008a.75.75 0 01-.75-.75v-6.5zm-2.09 1.5a.75.75 0 01.75-.75h.008a.75.75 0 01.75.75v3.5a.75.75 0 01-.75.75h-.008a.75.75 0 01-.75-.75v-3.5z" clip-rule="evenodd" />
+                        </svg>
+                        STOP
+                    </button>
+                    
                 </div>
 
                 <div id="textToSpeak" class="p-6 bg-gray-50 border border-gray-200 rounded-lg text-gray-800 whitespace-pre-wrap">
@@ -140,6 +155,7 @@
         // --- Speak Button Logic ---
         const transcriptOutput = document.getElementById('textToSpeak'); 
         const speakButton = document.getElementById('speakButton');
+        const stopButton = document.getElementById('stopButton');
 
         if (speakButton && transcriptOutput) {
             speakButton.addEventListener('click', () => {
@@ -152,6 +168,21 @@
                     }
                     const utterance = new SpeechSynthesisUtterance(text);
                     window.speechSynthesis.speak(utterance);
+                } else {
+                    alert("Text-to-speech is not supported in your browser.");
+                }
+            });
+        }
+        
+        if (stopButton && transcriptOutput) {
+            stopButton.addEventListener('click', () => {
+                // Use textContent to strip <br> tags for clean speech synthesis input
+                const text = transcriptOutput.textContent; 
+                if ('speechSynthesis' in window) {
+                    // Stop any current speech
+                    if (window.speechSynthesis.speaking) {
+                        window.speechSynthesis.cancel();
+                    }
                 } else {
                     alert("Text-to-speech is not supported in your browser.");
                 }
