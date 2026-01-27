@@ -7,7 +7,7 @@ import time
 import threading 
 import logging
 import re 
-from datetime import datetime, timedelta 
+from datetime import datetime, timedelta, timezone as dt_timezone
 from flask import flash 
 from sqlalchemy import select 
 from sqlalchemy import func
@@ -23,9 +23,7 @@ from config import (
 worker_logger = logging.getLogger('whisper_worker')
 
 # Extremely Broad Regular Expressions for Language Detection and Probability Extraction
-# Primary: Catches "language: [name] (p = [number])". Captures both language and the probability number
 LANGUAGE_AND_PROBABILITY_REGEX_PRIMARY = re.compile(r'language: ([\w\s-]+) \(p = ([\d.]+)\)', re.IGNORECASE) 
-# Fallback: Catches "lang = [name]" from the command summary (e.g., "lang = en")
 LANGUAGE_REGEX_FALLBACK = re.compile(r'lang = ([\w]+)', re.IGNORECASE) 
 
 # --- DIAGNOSTIC HELPER FUNCTION ---
@@ -66,8 +64,10 @@ def process_job(app, db, Recording, recording_id):
             return
 
         try:
-            # 3. Pre-process setup
+            # 3. Pre-process setup - Record start time
+            start_time = datetime.now(dt_timezone.utc)
             recording.status = 'processing'
+            recording.processing_started_at = start_time
             recording.progress = 0.05 # Initial progress
             recording.updated_at = func.now()
             db.session.commit()
@@ -114,19 +114,16 @@ def process_job(app, db, Recording, recording_id):
             worker_logger.info(f"Worker {job_id}: Executing command: {' '.join(command)}")
 
             # 5. Execute Whisper CLI
-            # Capture output in real-time or log the full output after completion
-            
             # Using Popen to capture both stdout and stderr
             process = subprocess.Popen(
                 command, 
                 stdout=subprocess.PIPE, 
                 stderr=subprocess.PIPE, 
                 text=True, 
-                cwd=BASE_DIR # Set working directory if needed
+                cwd=BASE_DIR
             )
             
-            # Note: For real-time progress, one would monitor the output stream here. 
-            # For simplicity, we wait for completion and capture all output.
+            # Wait for completion and capture all output
             stdout, stderr = process.communicate()
             
             if process.returncode != 0:
@@ -149,7 +146,7 @@ def process_job(app, db, Recording, recording_id):
                     
                 transcript_content = open(output_file_path, 'r', encoding='utf-8').read()
 
-                # --- FIX: Extract and save language/probability ---
+                # Extract and save language/probability
                 language = None
                 language_probability = None
                 
@@ -166,26 +163,28 @@ def process_job(app, db, Recording, recording_id):
                     match_fallback = LANGUAGE_REGEX_FALLBACK.search(full_output)
                     if match_fallback:
                         language = match_fallback.group(1).strip()
-                # --------------------------------------------------
 
                 # Update DB record with transcript, status, and new fields
                 recording.transcript = transcript_content
                 recording.status = 'done'
                 recording.progress = 1.0 # Completed
                 
-                # Set the new fields (will be None if not found, which is allowed by the model)
+                # Calculate processing duration
+                end_time = datetime.now(dt_timezone.utc)
+                if recording.processing_started_at:
+                    # Force the DB timestamp to be UTC-aware so math works with end_time
+                    duration = (end_time - recording.processing_started_at.replace(tzinfo=dt_timezone.utc)).total_seconds()
+                    #duration = (end_time - recording.processing_started_at).total_seconds()
+                    recording.processing_duration = duration
+                    worker_logger.info(f"Worker {job_id}: Processing took {duration:.2f} seconds")
+                
+                # Set the language fields
                 recording.language = language
                 recording.language_probability = language_probability
                 
                 recording.updated_at = func.now()
                 db.session.commit()
                 worker_logger.info(f"Worker {job_id}: Transcription complete and DB updated.")
-                
-                # 7. Cleanup (Optional: Delete the original audio file)
-                # Note: It is generally safer to keep the original audio until the user manually deletes the record.
-                # if os.path.exists(input_file_path):
-                #     os.remove(input_file_path)
-                #     worker_logger.info(f"Worker {job_id}: Deleted original audio file: {recording.filename}")
                 
             else:
                 # FAILED PATH: Transcription file was not created
@@ -202,13 +201,11 @@ def process_job(app, db, Recording, recording_id):
         except Exception as e:
             # ERROR PATH: Update DB record with error status
             error_message = f"Transcription failed. Error: {e}"
-            # Ensure status is set to 'error' and the error message is stored
             recording.transcript = error_message
             recording.status = 'error'
             recording.updated_at = func.now()
             db.session.commit()
             
-            # The original audio file is NOT deleted, allowing re-processing.
             worker_logger.error(f"Worker {job_id}: {error_message}")
             
         finally:
@@ -218,55 +215,43 @@ def process_job(app, db, Recording, recording_id):
 
 # --- MONITOR FUNCTION ---
 
-# Global list to track worker threads
+# Global tracking for active workers
 active_workers = []
-lock = threading.Lock()
+workers_lock = threading.Lock()
 
-def queue_monitor(app, db, Recording, max_workers):
+def queue_monitor(app, db, Recording, MAX_WORKERS):
     """
-    Monitors the database for 'pending' jobs and starts worker threads.
-    Runs continuously in a separate daemon thread.
+    Periodically checks the database for 'pending' jobs and starts worker threads.
     """
-    if DEBUG_MODE:
-        worker_logger.info("Queue monitor started.")
-    
-    # Run indefinitely as a daemon thread
+    worker_logger.info(f"Queue monitor started. Max workers: {MAX_WORKERS}")
+
     while True:
-        with lock:
-            # 1. Clean up finished threads
-            global active_workers
-            active_workers = [t for t in active_workers if t.is_alive()]
-            
-            current_workers = len(active_workers)
-            if DEBUG_MODE:
-                worker_logger.debug(f"Active workers: {current_workers}/{max_workers}")
-
-            # 2. Check if we can start a new job
-            if current_workers < max_workers:
-                workers_needed = max_workers - current_workers
-                if DEBUG_MODE:
-                    worker_logger.debug(f"Need to start up to {workers_needed} more workers.")
+        try:
+            with app.app_context():
+                # 1. Clean up finished threads from tracking list
+                with workers_lock:
+                    global active_workers
+                    active_workers = [t for t in active_workers if t.is_alive()]
+                    current_workers = len(active_workers)
                 
-                with app.app_context():
+                # 2. Only start new jobs if we have available slots
+                workers_needed = MAX_WORKERS - current_workers
+
+                if workers_needed > 0:
+                    # 3. Fetch pending jobs (only what we have capacity for)
                     try:
-                        # 3. Find pending jobs (order by ID ascending to process oldest first)
                         pending_jobs = db.session.execute(
-                            db.select(Recording.id)
+                            select(Recording.id)
                             .filter_by(status='pending')
                             .order_by(Recording.id.asc())
                             .limit(workers_needed)
                         ).scalars().all()
                         
-                        db.session.remove() # Clean up session before starting new threads
-                        
                     except Exception as e:
                         worker_logger.error(f"Database query error in monitor: {e}")
-                        pending_jobs = [] # Clear list on error
+                        pending_jobs = []
 
-                
-                # 4. Start a new thread for each pending job
-                if pending_jobs:
-                    worker_logger.info(f"Found {len(pending_jobs)} pending jobs. Starting threads.")
+                    # 4. Start new threads for pending jobs
                     for rec_id in pending_jobs:
                         thread = threading.Thread(
                             target=process_job,
@@ -275,11 +260,14 @@ def queue_monitor(app, db, Recording, max_workers):
                             name=f"WorkerThread-{rec_id}"
                         )
                         thread.start()
-                        active_workers.append(thread)
+                        
+                        with workers_lock:
+                            active_workers.append(thread)
+                        
                         worker_logger.info(f"Monitor: Started thread for Recording ID: {rec_id}")
-                else:
-                    if DEBUG_MODE:
-                        worker_logger.debug("No pending jobs found.")
 
+        except Exception as e:
+            worker_logger.error(f"Queue monitor error: {e}", exc_info=True)
+        
         # Sleep for a short interval before checking again
         time.sleep(5)

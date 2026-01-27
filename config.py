@@ -36,7 +36,11 @@ MODEL_FILENAMES = {
     "tiny": "ggml-tiny.bin",
     "base": "ggml-base.bin",
     "small": "ggml-small.bin",
-    "medium": "ggml-medium.bin"
+    "medium": "ggml-medium.bin",
+    #"large-v1": "ggml-large-v1.bin",
+    "large-v2": "ggml-large-v2.bin"
+    #"large-v3": "ggml-large-v3.bin",
+    #"large-v3-turbo": "ggml-large-v3-turbo.bin"
 }
 
 # Models displayed in the UI
@@ -45,7 +49,11 @@ WHISPER_UI_MODELS = {
     "tiny": "Tiny (Fastest, Least Accurate)",
     "base": "Base",
     "small": "Small",
-    "medium": "Medium (Most Accurate)"
+    "medium": "Medium",
+    #"large-v1": "Large V1",
+    "large-v2": "Large V2 (Most Accurate)"
+    #"large-v3": "Large V3",
+    #"large-v3-turbo": "Large V3 Turbo"
 }
 
 # New dictionary mapping model keys to the actual model file base name (e.g., 'base' -> 'base')
@@ -55,7 +63,11 @@ AVAILABLE_MODELS = {
     "tiny": "tiny",
     "base": "base",
     "small": "small",
-    "medium": "medium"
+    "medium": "medium",
+    #"large-v1": "large-v1",
+    "large-v2": "large-v2"
+    #"large-v3": "large-v3",
+    #"large-v3-turbo": "large-v3-turbo"
 }
 
 # 1. Define the root of the whisper.cpp project folder. This setting assumes the transcriber directory and the whisper.cpp directory next to each other

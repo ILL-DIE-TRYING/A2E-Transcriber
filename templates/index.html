@@ -525,6 +525,14 @@ input[type="checkbox"].focus\:ring-indigo-500:focus {
                                 </div>
                                 
                                 
+                                <div class="text-xs text-gray-500 mt-1" id="duration-{{ recording.id }}">
+                                    {% if recording.processing_duration %}
+                                        Process Time: <span class="font-medium text-gray-700">{{ "%.1f"|format(recording.processing_duration) }}s</span>
+                                    {% endif %}
+                                </div>
+                                
+                                
+                                
                                 <div class="text-xs text-gray-500">
                                     {{ available_models[recording.model_key] or recording.model_key }}
                                 </div>
@@ -546,6 +554,7 @@ input[type="checkbox"].focus\:ring-indigo-500:focus {
                                 <div class="text-xs text-gray-500">
                                     {{ recording.filesize | file_size_format }}
                                 </div>
+                                
                                 
                                 </a>
                             </td>
@@ -770,6 +779,12 @@ input[type="checkbox"].focus\:ring-indigo-500:focus {
                     
                     // IMPORTANT: Change to innerHTML to render the <span> tag
                     progressText.innerHTML = langText;
+                    
+                    const recId = data.id; // Using data.id from the API response
+                    const durationDiv = document.getElementById(`duration-${recId}`);
+                    if (durationDiv && data.processing_duration) {
+                        durationDiv.innerHTML = `Process Time: <span class="font-medium text-gray-700">${data.processing_duration.toFixed(1)}s</span>`;
+                    }
                     // END OF MODIFIED BLOCK
                 } else {
                     progressText.textContent = ''; // Clear for done/error if no language

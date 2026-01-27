@@ -46,7 +46,6 @@ login_manager.login_message = "Please log in to access this page."
 @login_manager.user_loader
 def load_user(user_id):
     """Callback for Flask-Login to load a user from the ID."""
-    # Use db.get_or_404(User, user_id) or similar for direct fetch if preferred
     return db.session.get(User, int(user_id))
 
 # --- Database Models ---
@@ -76,27 +75,29 @@ class Recording(UserMixin, db.Model):
     # File-related fields
     original_filename = db.Column(db.String(255), nullable=False)
     filename = db.Column(db.String(255), unique=True, nullable=False)
-    
-    # FIX: Add filesize column
     filesize = db.Column(db.Integer, nullable=False) 
     
     # Whisper configuration fields
-    model_key = db.Column(db.String(50), nullable=False) # e.g., 'tiny', 'base', 'small'
+    model_key = db.Column(db.String(50), nullable=False)
     translate_to_en = db.Column(db.Boolean, default=False)
     
-    # FIX: Add language detection fields
-    language = db.Column(db.String(50), nullable=True, default=None)  # e.g., 'English'
-    language_probability = db.Column(db.Float, nullable=True, default=None) # e.g., 0.98
+    # Language detection fields
+    language = db.Column(db.String(50), nullable=True, default=None)
+    language_probability = db.Column(db.Float, nullable=True, default=None)
 
     # Status fields
-    status = db.Column(db.String(50), default='pending', nullable=False) # 'pending', 'processing', 'done', 'error'
-    progress = db.Column(db.Float, default=0.0) # 0.0 to 1.0 for processing
-    transcript = db.Column(db.Text, nullable=True) # Full transcript/error message
+    status = db.Column(db.String(50), default='pending', nullable=False)
+    progress = db.Column(db.Float, default=0.0)
+    transcript = db.Column(db.Text, nullable=True)
     
     # Timestamps
-    created_at = db.Column(db.DateTime, default=func.now(), nullable=False)
-    updated_at = db.Column(db.DateTime, default=func.now(), onupdate=func.now(), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), default=func.now(), nullable=False)
+    updated_at = db.Column(db.DateTime(timezone=True), default=func.now(), onupdate=func.now(), nullable=False)
     uploaded_at = db.Column(db.DateTime(timezone=True), default=func.now(), nullable=False)
+    
+    # Processing time tracking
+    processing_started_at = db.Column(db.DateTime(timezone=True), nullable=True, default=None)
+    processing_duration = db.Column(db.Float, nullable=True, default=None)  # Duration in seconds
     
     def __repr__(self):
         return f'<Recording {self.id} - {self.status}>'
@@ -110,9 +111,6 @@ app_logger.debug("Routes registration complete.")
 
 with app.app_context():
     app_logger.info("Checking database schema and creating tables if necessary...")
-    # 5. DB Initialization: THIS IS WHAT CREATES THE TABLE WITH ALL COLUMNS
-    # NOTE: Since the schema has changed, you may need to delete your existing database.db
-    # file for this to take effect or use a proper migration tool like Flask-Migrate.
     db.create_all() 
     app_logger.info("Database initialization complete.")
     
@@ -138,5 +136,4 @@ with app.app_context():
 
 if __name__ == '__main__':
     app_logger.info(f"Starting Flask app on http://0.0.0.0:{SERVER_PORT}")
-    # use_reloader=False is crucial when using threads
     app.run(host='0.0.0.0', port=SERVER_PORT, debug=DEBUG_MODE, use_reloader=False)

@@ -65,6 +65,12 @@
                             {{ recording.filesize | file_size_format if recording.filesize is not none else 'N/A' }}
                         </dd>
                     </div>
+                    {% if recording.processing_duration %}
+                    <div class="sm:col-span-1">
+                        <dt class="font-medium text-gray-500">Process Time</dt>
+                        <dd class="mt-1 text-gray-900">{{ "%.1f"|format(recording.processing_duration) }}s</dd>
+                    </div>
+                    {% endif %}
                     <div class="sm:col-span-1">
                         <dt class="font-medium text-gray-500">Language Detected</dt>
                         <dd class="mt-1 text-gray-900">
