@@ -55,7 +55,7 @@ git clone https://github.com/ILL-DIE-TRYING/A2E-Transcriber
 
 ## Prepare the transcriber for first start and user generation
 
-### Enable user registration in config.py, register your user, and the IMMEDIATLY disable user registration (IMPORTANT!)
+### Enable user registration in config.py, register your user, and then IMMEDIATLY disable user registration (IMPORTANT!)
 
 ```
 cd A2E-Transcriber
