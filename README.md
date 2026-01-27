@@ -5,6 +5,7 @@
 > ### THIS CODE WAS MOSTLY WRITTEN BY AI WITH MY GUIDANCE.
 > ### I AM NOT A PYTHON DEVELOPER BUT HAVE A FEW DECADES UNDER MY BELT WITH PHP
 > ### I CANNOT GUARANTEE THE VALIDITY OR SANITY OF THIS CODE (ALTHOUGH IT LOOKS/RUNS ALRIGHT TO ME) ;)
+> ### DO NOT RUN THIS ON A PUBLIC FACING SERVER! THIS WAS NOT DEVELOPED WITH SECURITY IN MIND. YOU HAVE BEEN WARNED!
 
 Built with Python and requires Whisper.cpp to be compiled and sitting in a directory directly next to the transcriber directory.
 
@@ -54,7 +55,7 @@ git clone https://github.com/ILL-DIE-TRYING/A2E-Transcriber
 
 ## Prepare the transcriber for first start and user generation
 
-### Enable user registration in config.py, register your user, and the IMMEDIATLY disable user registration (IMPORTANT!)
+### Enable user registration in config.py, register your user, and then IMMEDIATLY disable user registration (IMPORTANT!)
 
 ```
 cd A2E-Transcriber

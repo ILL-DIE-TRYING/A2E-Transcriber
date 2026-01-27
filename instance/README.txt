@@ -1,0 +1,1 @@
+This directory is empty but will be used at first startup to generate the sqlite database.

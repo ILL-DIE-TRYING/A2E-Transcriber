@@ -1,0 +1,1 @@
+This directory is empty but will be used to store transcripts.
