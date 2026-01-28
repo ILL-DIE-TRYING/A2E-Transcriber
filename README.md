@@ -43,9 +43,10 @@ cd whisper.cpp
 make
 ```
 ### Download whisper models
+This next block of commands should be done in the whisper.cpp/models directory
 
 ```
-cd whisper.cpp/models
+cd models
 ./download-ggml-model.sh tiny
 ./download-ggml-model.sh small
 ./download-ggml-model.sh base
