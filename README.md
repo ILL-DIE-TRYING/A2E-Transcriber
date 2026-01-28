@@ -86,19 +86,19 @@ Set to False (SECURE DEFAULT) immediately after the first user is created.
 
 The transcriber should start up and tell you the url to view the web interface.
 At this point you should be able to browse to the transciber URL with your web browser.
-I suggest bookmarking the url. You should be presented with login box that has an option to register an account. 
+I suggest bookmarking the url. You should be presented with a login box that has an option to register an account. 
 Choose register, fill in the form, and when finished, save and try logging in.
 
-### ONCE YOU HAVE LOGGED IN YOU MUST EDIT config.py and set REGISTRATION_ENABLED to "False".
+### ONCE YOU HAVE LOGGED IN YOU SHOULD EDIT config.py and set REGISTRATION_ENABLED to "False".
 
 ```
 nano config.py
 ```
 
 ### --- Authentication Configuration ---
-Set to True to enable the /register route for initial user creation.
-Set to False (SECURE DEFAULT) immediately after the first user is created.
-### DO NOT LEAVE THIS SET TO TRUE!! YOU WILL REGRET IT!
+Set "REGISTRATION_ENABLED" to True to enable the /register route for initial user creation.
+Set "REGISTRATION_ENABLED" to False (SECURE DEFAULT) immediately after the first user is created.
+### DO NOT LEAVE THIS SET TO TRUE!! IT IS A SECURITY RISK!
 
 `REGISTRATION_ENABLED = False`
 
