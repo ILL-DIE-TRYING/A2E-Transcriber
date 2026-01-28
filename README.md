@@ -52,7 +52,7 @@ cd models
 ./download-ggml-model.sh base
 ./download-ggml-model.sh medium
 ```
-### Download the translator repository
+### Download the transcriber repository
 
 ```
 cd ../../
