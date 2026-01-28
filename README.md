@@ -1,9 +1,9 @@
 ## A2E-Transcriber
 ### An "Anything To English" audio transcription interface created with AI.
 
-<img width="492" height="731" alt="image" src="https://github.com/user-attachments/assets/500cd4ac-3538-45c7-a442-d114b260fb0e" />
+<img width="492" alt="image" src="https://github.com/user-attachments/assets/500cd4ac-3538-45c7-a442-d114b260fb0e" />
 
-<img width="988" height="582" alt="image" src="https://github.com/user-attachments/assets/c7dc153e-877c-4af2-8a87-13ea5f89f359" />
+<img width="492" alt="image" src="https://github.com/user-attachments/assets/c7dc153e-877c-4af2-8a87-13ea5f89f359" />
 
 
 > [!WARNING]
