@@ -18,7 +18,7 @@ Note! This will run on a Raspberry PI 4 8GB but is extremely slow when using the
 The faster your machine is (especially the GPU) the faster the translation will happen.
 This code could also be altered to run the larger (smarter) models on a faster machine.
 
-Only tested on Linux (Mint 22)
+Only tested on Linux (Mint 22, Debian Trixie)
 
 ### REQUIRED DIRECTORY STRUCTURE
 
